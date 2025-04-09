@@ -8,16 +8,15 @@ interface User {
   password: string;
   name: string;
   edad: number;
-  tarjetas: any[]; // Aquí puedes usar el tipo Tarjeta si es necesario
+  tarjetas: any[];
 }
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { name } = useLocalSearchParams(); // Obtener el nombre del usuario de la URL
+  const { name } = useLocalSearchParams();
   const [userData, setUserData] = useState<User | null>(null);
 
   useEffect(() => {
-    // Simulamos los datos del usuario, normalmente aquí iría la llamada al backend
     const users: User[] = [
       {
         id: 1,
@@ -40,21 +39,35 @@ const ProfileScreen = () => {
       }
     ];
 
-    // Buscar al usuario por nombre
     const user = users.find((u) => u.name === name);
-    setUserData(user || null); // Asignamos los datos del usuario
+    setUserData(user || null);
   }, [name]);
 
   if (!userData) {
-    return <Text>Loading...</Text>;
+    return <Text style={styles.loading}>Cargando perfil...</Text>;
   }
 
   return (
     <View style={styles.container}>
-      <Text>Perfil de {userData.name}</Text>
-      <Text>Edad: {userData.edad}</Text>
-      <Text>Username: {userData.username}</Text>
-      <Button title="Regresar al Menú" onPress={() => router.push(`/menu?name=${userData.name}`)} /> 
+      <View style={styles.card}>
+        <Text style={styles.title}>👤 Perfil</Text>
+        <Text style={styles.label}>Nombre:</Text>
+        <Text style={styles.info}>{userData.name}</Text>
+
+        <Text style={styles.label}>Edad:</Text>
+        <Text style={styles.info}>{userData.edad} años</Text>
+
+        <Text style={styles.label}>Usuario:</Text>
+        <Text style={styles.info}>{userData.username}</Text>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="🔙 Regresar al Menú"
+            color="#4682B4"
+            onPress={() => router.push(`/menu?name=${userData.name}`)}
+          />
+        </View>
+      </View>
     </View>
   );
 };
@@ -62,9 +75,47 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f0f4f8',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 20,
+  },
+  card: {
+    backgroundColor: '#fff',
+    width: '100%',
+    maxWidth: 350,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 10,
+  },
+  info: {
+    fontSize: 18,
+    color: '#222',
+  },
+  loading: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    marginTop: 50,
+  },
+  buttonContainer: {
+    marginTop: 30,
   },
 });
 

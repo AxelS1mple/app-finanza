@@ -20,6 +20,13 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
+interface User {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+}
+
 const LoginScreen = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -37,23 +44,8 @@ const LoginScreen = () => {
   const logoScale = useRef(new Animated.Value(1)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
 
-  // Datos de usuarios locales
-  const users = [
-    {
-      id: 1,
-      username: 'axel',
-      password: '123',
-      name: 'Axel',
-      edad: 20,
-    },
-    {
-      id: 2,
-      username: 'usuario2',
-      password: 'securePass456',
-      name: 'María López',
-      edad: 25,
-    },
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Animación de entrada
@@ -71,6 +63,22 @@ const LoginScreen = () => {
         easing: Easing.out(Easing.ease)
       })
     ]).start();
+
+    // Fetch de usuarios
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('https://lemonchiffon-dragonfly-545545.hostingersite.com/api.php?endpoint=usuarios');
+        const data = await response.json();
+        setUsers(data);
+      } catch (err) {
+        console.error('Error al obtener usuarios:', err);
+        setError('Loding...');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   const handleLogin = () => {
@@ -113,7 +121,8 @@ const LoginScreen = () => {
         }),
         Animated.delay(300)
       ]).start(() => {
-        router.push(`/menu?name=${user.name}`);
+        console.log("id mandando al menu",user.id);
+        router.push(`/menu?id=${user.id}`);
       });
     } else {
       setError('Usuario o contraseña incorrectos');

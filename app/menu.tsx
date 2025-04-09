@@ -1,133 +1,72 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  Animated, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
   ScrollView,
-  Dimensions,
-  SafeAreaView
+  SafeAreaView,
+  Dimensions
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
 interface Tarjeta {
   id: string;
-  tipo: string;
-  banco: string;
-  numero: string;
-  saldo: number;
-  fecha_expiracion: string;
-  color: string;
-}
-
-interface User {
-  id: number;
   username: string;
   password: string;
   name: string;
   edad: number;
-  tarjetas: Tarjeta[];
-  avatar?: string;
+  tipo: string;
+  banco: string;
+  numero: string;
+  saldo: string;
+  fecha_expiracion: string;
+  color: string;
 }
 
 const MenuScreen = () => {
   const router = useRouter();
-  const { name } = useLocalSearchParams();
-  const [userData, setUserData] = useState<User | null>(null);
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(30);
+  const { id } = useLocalSearchParams();
+  const [userData, setUserData] = useState<Tarjeta[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Animación de entrada
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      })
-    ]).start();
-
-    // Datos de usuario con más detalle
-    const users: User[] = [
-      {
-        id: 1,
-        username: 'axel',
-        password: '123',
-        name: 'Axel',
-        edad: 20,
-        avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-        tarjetas: [
-          {
-            id: 'card1',
-            tipo: 'Crédito',
-            banco: 'Banco Nacional',
-            numero: '1234 5678 9012 3456',
-            saldo: 5000.00,
-            fecha_expiracion: '12/25',
-            color: '#3a7bd5'
-          },
-          {
-            id: 'card2',
-            tipo: 'Débito',
-            banco: 'Banco Local',
-            numero: '9876 5432 1098 7654',
-            saldo: 1200.00,
-            fecha_expiracion: '05/24',
-            color: '#00d2ff'
-          }
-        ]
-      },
-      {
-        id: 2,
-        username: 'usuario2',
-        password: 'securePass456',
-        name: 'María López',
-        edad: 25,
-        avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-        tarjetas: [
-          {
-            id: 'card1',
-            tipo: 'Crédito',
-            banco: 'BBVA',
-            numero: '1111 2222 3333 4444',
-            saldo: 1500.00,
-            fecha_expiracion: '08/26',
-            color: '#a8ff78'
-          }
-        ]
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`https://lemonchiffon-dragonfly-545545.hostingersite.com/apitarjetas.php?id=${id}`);
+        const data = await response.json();
+        setUserData(data);
+      } catch (error) {
+        console.error("Error al obtener los datos del usuario:", error);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    const user = users.find((u) => u.name === name);
-    setUserData(user || null);
-  }, [name]);
+    if (id) {
+      fetchUserData();
+    }
+  }, [id]);
 
   const handleAddCard = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/agregartarjeta?name=${userData?.name}`);
+    router.push(`/agregartarjeta?id=${id}`);
   };
 
   const handleCardPress = (tarjetaId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/detalletarjeta?tarjetaId=${tarjetaId}&userName=${userData?.name}`);
+    router.push(`/detalletarjeta?tarjetaId=${tarjetaId}&id=${id}`);
   };
 
   const handleProfilePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/perfil?name=${userData?.name}`);
+    router.push(`/perfil?id=${id}`);
   };
 
   const handleLogout = () => {
@@ -136,12 +75,9 @@ const MenuScreen = () => {
   };
 
   const renderCard = ({ item }: { item: Tarjeta }) => (
-    <TouchableOpacity 
-      onPress={() => handleCardPress(item.id)}
-      activeOpacity={0.9}
-    >
+    <TouchableOpacity onPress={() => handleCardPress(item.id)} activeOpacity={0.9}>
       <LinearGradient
-        colors={[item.color, darkenColor(item.color, 20)]}
+        colors={['#015958', '#023535']}
         style={styles.card}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -150,24 +86,20 @@ const MenuScreen = () => {
           <Text style={styles.cardBank}>{item.banco}</Text>
           <Text style={styles.cardType}>{item.tipo}</Text>
         </View>
-        
         <View style={styles.cardNumberContainer}>
           {item.numero.split(' ').map((part, index) => (
-            <Text key={index} style={styles.cardNumberPart}>
-              {part}
-            </Text>
+            <Text key={index} style={styles.cardNumberPart}>{part}</Text>
           ))}
         </View>
-        
         <View style={styles.cardFooter}>
           <Text style={styles.cardExpiry}>Expira {item.fecha_expiracion}</Text>
-          <Text style={styles.cardBalance}>${item.saldo.toFixed(2)}</Text>
+          <Text style={styles.cardBalance}>${item.saldo}</Text>
         </View>
       </LinearGradient>
     </TouchableOpacity>
   );
 
-  if (!userData) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Cargando...</Text>
@@ -175,76 +107,62 @@ const MenuScreen = () => {
     );
   }
 
+  if (userData.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>No se encontraron tarjetas</Text>
+      </View>
+    );
+  }
+
+  const userName = userData[0]?.name || 'Usuario';
+  const userAge = userData[0]?.edad || '';
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#f5f7fa', '#e4e8f0']}
-        style={styles.container}
-      >
+      <LinearGradient colors={['#015958', '#011F1F']} style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Animated.View 
-            style={[
-              styles.header,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
-            ]}
-          >
+          <View style={styles.header}>
             <View style={styles.userInfo}>
-              <Image
-                source={{ uri: userData.avatar }}
-                style={styles.avatar}
-              />
               <View>
                 <Text style={styles.welcomeText}>Bienvenido</Text>
-                <Text style={styles.userName}>{userData.name}</Text>
+                <Text style={styles.userName}>{userName}</Text>
               </View>
             </View>
-            
+
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{userData.tarjetas.length}</Text>
+                <Text style={styles.statValue}>{userData.length}</Text>
                 <Text style={styles.statLabel}>Tarjetas</Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>
-                  ${userData.tarjetas.reduce((sum, card) => sum + card.saldo, 0).toFixed(2)}
+                  ${userData.reduce((sum, card) => sum + parseFloat(card.saldo), 0).toFixed(2)}
                 </Text>
                 <Text style={styles.statLabel}>Saldo total</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{userData.edad}</Text>
+                <Text style={styles.statValue}>{userAge}</Text>
                 <Text style={styles.statLabel}>Edad</Text>
               </View>
             </View>
-          </Animated.View>
+          </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Tus tarjetas</Text>
-            {userData.tarjetas.length > 0 ? (
-              <FlatList
-                data={userData.tarjetas}
-                renderItem={renderCard}
-                keyExtractor={(item) => item.id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.cardsContainer}
-              />
-            ) : (
-              <View style={styles.emptyCards}>
-                <Ionicons name="card-outline" size={48} color="#ccc" />
-                <Text style={styles.emptyText}>No tienes tarjetas registradas</Text>
-              </View>
-            )}
+            <FlatList
+              data={userData}
+              renderItem={renderCard}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.cardsContainer}
+            />
           </View>
 
           <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handleAddCard}
-            >
-              <LinearGradient
-                colors={['#0CABA8', '#008F8C']}
-                style={styles.actionButtonGradient}
-              >
+            <TouchableOpacity style={styles.actionButton} onPress={handleAddCard}>
+              <LinearGradient colors={['#015958', '#023535']} style={styles.actionButtonGradient}>
                 <MaterialIcons name="add-card" size={24} color="white" />
                 <Text style={styles.actionButtonText}>Agregar tarjeta</Text>
               </LinearGradient>
@@ -253,18 +171,11 @@ const MenuScreen = () => {
         </ScrollView>
 
         <View style={styles.bottomMenu}>
-          <TouchableOpacity 
-            style={styles.menuButton}
-            onPress={handleProfilePress}
-          >
-            <Ionicons name="person-outline" size={24} color="#0CABA8" />
+          <TouchableOpacity style={styles.menuButton} onPress={handleProfilePress}>
+            <Ionicons name="person-outline" size={24} color="#ffffff" />
             <Text style={styles.menuButtonText}>Perfil</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.menuButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.menuButton} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={24} color="#ff6b6b" />
             <Text style={[styles.menuButtonText, { color: '#ff6b6b' }]}>Salir</Text>
           </TouchableOpacity>
@@ -274,217 +185,70 @@ const MenuScreen = () => {
   );
 };
 
-// Función auxiliar para oscurecer colores
-const darkenColor = (color: string, percent: number) => {
-  // Implementación simplificada - en una app real usarías una librería como polished
-  return color; // Retornamos el mismo color por simplicidad
-};
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f7fa',
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 80,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f7fa',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#666',
-  },
-  header: {
-    padding: 24,
-    paddingTop: 16,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: '#0CABA8',
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333',
-  },
+  safeArea: { flex: 1, backgroundColor: '#011F1F' },
+  container: { flex: 1 },
+  scrollContent: { paddingBottom: 100 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { fontSize: 18, color: '#fff' },
+  header: { padding: 24, paddingTop: 16 },
+  userInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  welcomeText: { fontSize: 14, color: '#ccc', marginBottom: 4 },
+  userName: { fontSize: 22, fontWeight: '700', color: '#fff' },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: 'white',
-    borderRadius: 16,
+    backgroundColor: '#023535',
+    borderRadius: 8,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  statItem: {
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0CABA8',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  section: {
-    marginTop: 8,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
     marginBottom: 16,
   },
-  cardsContainer: {
-    paddingBottom: 8,
-  },
+  statItem: { alignItems: 'center' },
+  statValue: { fontSize: 24, fontWeight: '600', color: '#fff' },
+  statLabel: { fontSize: 12, color: '#ccc' },
+  section: { paddingHorizontal: 24, marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 16 },
+  cardsContainer: { flexDirection: 'row' },
   card: {
-    width: width * 0.75,
-    height: 200,
-    borderRadius: 16,
-    padding: 20,
+    width: 220,
+    height: 130,
+    borderRadius: 14,
     marginRight: 16,
+    padding: 14,
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
+    backgroundColor: '#015958'
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cardBank: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: 'white',
-  },
-  cardType: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  cardNumberContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 20,
-  },
-  cardNumberPart: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    marginHorizontal: 6,
-    letterSpacing: 1,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  cardExpiry: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  cardBalance: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: 'white',
-  },
-  emptyCards: {
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    marginTop: 8,
-  },
-  emptyText: {
-    marginTop: 12,
-    color: '#999',
-    fontSize: 16,
-  },
-  quickActions: {
-    paddingHorizontal: 24,
-    marginTop: 24,
-  },
-  actionButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    height: 60,
-    shadowColor: '#0CABA8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardBank: { fontSize: 13, fontWeight: '700', color: 'white' },
+  cardType: { fontSize: 11, fontWeight: '600', color: 'white' },
+  cardNumberContainer: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardNumberPart: { fontSize: 15, color: 'white' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardExpiry: { fontSize: 11, color: 'white' },
+  cardBalance: { fontSize: 18, fontWeight: '700', color: 'white' },
+  quickActions: { paddingHorizontal: 24, marginBottom: 24 },
+  actionButton: { marginVertical: 10 },
   actionButtonGradient: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 10,
     paddingHorizontal: 24,
   },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    marginLeft: 12,
-  },
+  actionButtonText: { fontSize: 16, fontWeight: '700', color: 'white', marginLeft: 10 },
   bottomMenu: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 20,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    padding: 10,
+    backgroundColor: '#011F1F',
   },
-  menuButton: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  menuButtonText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#0CABA8',
-    fontWeight: '500',
-  },
+  menuButton: { alignItems: 'center' },
+  menuButtonText: { fontSize: 12, color: '#ffffff', marginTop: 4 },
 });
 
 export default MenuScreen;
